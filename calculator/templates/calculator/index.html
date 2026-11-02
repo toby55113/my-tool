@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圓形管滿流曼寧公式計算器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f7fb;
+            color: #1e293b;
+            margin: 0;
+            padding: 40px 16px;
+        }
+        .container {
+            max-width: 560px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+            padding: 32px;
+        }
+        h1 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 1.5rem;
+            color: #0f172a;
+        }
+        .subtitle {
+            margin-top: 0;
+            margin-bottom: 24px;
+            color: #64748b;
+            font-size: 0.92rem;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        .error {
+            margin-top: 20px;
+            padding: 12px 16px;
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .result-card {
+            margin-top: 24px;
+            padding: 20px;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+        }
+        .result-card h2 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 1.15rem;
+            color: #1e40af;
+        }
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .result-item {
+            background: #ffffff;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #dbeafe;
+        }
+        .result-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .result-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .result-unit {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #475569;
+        }
+        .formula-note {
+            margin-top: 14px;
+            font-size: 0.82rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>圓形管滿流計算器（曼寧公式）</h1>
+        <p class="subtitle">輸入管徑、坡度與曼寧粗糙係數 n，計算圓形管滿流時之流速與流量。</p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="diameter_mm">管徑 D（mm）</label>
+                <input type="number" id="diameter_mm" name="diameter_mm" step="any" min="0.0001" placeholder="例如：500" value="{{ diameter_mm }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="slope_percent">坡度 S（%）</label>
+                <input type="number" id="slope_percent" name="slope_percent" step="any" min="0.0001" placeholder="例如：0.5" value="{{ slope_percent }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="manning_n">曼寧粗糙係數 n</label>
+                <input type="number" id="manning_n" name="manning_n" step="any" min="0.0001" placeholder="例如：0.013" value="{{ manning_n }}" required>
+            </div>
+
+            <button type="submit">計算流速與流量</button>
+        </form>
+
+        {% if error %}
+        <div class="error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if result %}
+        <div class="result-card">
+            <h2>計算結果（圓形管滿流）</h2>
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-label">滿流流速 V</div>
+                    <div class="result-value">{{ result.velocity }} <span class="result-unit">m/s</span></div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">滿流流量 Q</div>
+                    <div class="result-value">{{ result.flow_rate }} <span class="result-unit">m³/s</span></div>
+                </div>
+            </div>
+            <div class="formula-note">
+                斷面積 A = {{ result.area }} m² ｜ 水力半徑 R = D/4 = {{ result.hydraulic_radius }} m ｜ 坡度 S = {{ result.slope_ratio }} m/m
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
